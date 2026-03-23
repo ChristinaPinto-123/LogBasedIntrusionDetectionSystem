@@ -6,7 +6,7 @@ import logging
 from logging.handlers import SysLogHandler
 import requests
 
-DISCORD_WEBHOOK_URL = "YOUR_WEBHOOK_URL_HERE"
+DISCORD_WEBHOOK_URL = "YOU_WEBHOOK_URL_HERE"
 
 def send_to_discord(alert_data):
     message = {
@@ -72,7 +72,8 @@ def monitor_logs():
                             "target_user": user,
                             "attempt_count": len(failure_tracker[ip]),
                             "window_seconds": window,
-                            "severity": "high"
+                            "severity": "high",
+                            "timestamp": time.ctime(now)
                         }
                         send_to_siem(alert)
                         send_to_discord(alert)
