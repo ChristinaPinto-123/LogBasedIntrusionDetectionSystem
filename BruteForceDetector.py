@@ -4,14 +4,28 @@ import time #track when failure happens
 import collections
 import logging
 from logging.handlers import SysLogHandler
+import requests
+
+DISCORD_WEBHOOK_URL = "YOUR_WEBHOOK_URL_HERE"
+
+def send_to_discord(alert_data):
+    message = {
+        "content": f"🚨 **BRUTE FORCE ALERT** 🚨\n"
+                   f"**IP:** `{alert_data['source_ip']}`\n"
+                   f"**Target User:** `{alert_data['target_user']}`\n"
+                   f"**Attempts:** {alert_data['attempt_count']}\n"
+                   f"**Time:** {alert_data['timestamp']}"
+    }
+    requests.post(DISCORD_WEBHOOK_URL, json=message)
+    print("[+] Discord Alert Sent!")
 
 log_file = "/var/log/auth.log"
 siem_ip = "127.0.0.1" 
 siem_port = 514
-threshold = 5 #limit: 5 failed attempts will trigger an alert
+threshold = 2 #limit: 2 failed attempts will trigger an alert
 window = 120 #timeframe: 5 attempts must happen in 120 seconds
 
-failed_pattern = re.compile(r"Failed password for (?P<user>\S+) from (?P<ip>\S+)") #looks for the exact phrase "failed password for..."
+failed_pattern = re.compile(r"Failed password for (?:invalid user )?(?P<user>\S+) from (?P<ip>\S+)")
 failure_tracker = collections.defaultdict(list)
 
 def send_to_siem(alert_data):
@@ -61,6 +75,7 @@ def monitor_logs():
                             "severity": "high"
                         }
                         send_to_siem(alert)
+                        send_to_discord(alert)
                         failure_tracker[ip] = [] #resets the counter
     except PermissionError:
         print("[X] Error: Run with 'sudo' to access log files.")
